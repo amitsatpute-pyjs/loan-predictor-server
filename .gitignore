@@ -1,5 +1,5 @@
 models
 .venv
 .loanenv
-.codevenv
+.env
 __pycache__
