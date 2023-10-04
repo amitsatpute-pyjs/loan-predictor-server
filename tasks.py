@@ -30,7 +30,9 @@ def get_info_from_docs(_data, callback_api, rds_task_id):
     #     }
     # For callback
     task_id = rds.get(rds_task_id).decode("utf-8")
+    print(task_id,"*****")
     url = callback_api
+    result=json.loads(result)
     result["task_id"] = task_id
     requests.post(url, data=json.dumps(result), headers=headers)
     return result
@@ -39,6 +41,7 @@ def get_info_from_docs(_data, callback_api, rds_task_id):
 @app.task()
 def generating_loan_eligibilty_status(_data, callback_api, rds_task_id):
     # loan status operation
+    print(_data,"Data is ***********")
     result = llm.get_eligibility_status(data=_data)
     # time.sleep(4)
     # result = {
@@ -49,6 +52,8 @@ def generating_loan_eligibilty_status(_data, callback_api, rds_task_id):
     # For callback
     task_id = rds.get(rds_task_id).decode("utf-8")
     url = callback_api
+    result=json.loads(result)
+
     result["task_id"] = task_id    
     requests.post(url, data=json.dumps(result), headers=headers)
     return result

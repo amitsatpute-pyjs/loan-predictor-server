@@ -28,7 +28,7 @@ def upload_files():
 
     # LLM operation
     text = process(uploaded_files=files)
-    print("*******:", text)
+    # print("*******:", text)
     kwargs = {"_data": text, "callback_api": "http://127.0.0.1:5000/callback_result",
               "rds_task_id": rds_task_id}
     task = celery.send_task("tasks.get_info_from_docs", kwargs=kwargs)

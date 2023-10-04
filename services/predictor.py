@@ -3,6 +3,9 @@ import requests
 import json
 import re
 from helpers.res import response
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class Predictor:
@@ -20,6 +23,7 @@ class Predictor:
         self.token = ""
 
     def get_token(self):
+        print(self.api_key,"*******************")
         token_response = requests.post(self.token_url, data={
                                        "apikey": self.api_key, "grant_type": 'urn:ibm:params:oauth:grant-type:apikey'})
         self.token = token_response.json()["access_token"]
@@ -66,39 +70,45 @@ class Predictor:
         income = self.extract_info(text, "what is salary of this month?")
         input = re.sub(",", '', income)
         ans = re.findall(r"\d+\.\d+", input)
-        anual_income = int(float(ans[0]))
-        anual_income *= 12
+        income = int(float(ans[0]))
+        anual_income =income* 12
         bank_asset = self.extract_info(text, "what is the Closing balance?")
+        input = re.sub(",", '', bank_asset)
+        ans = re.findall(r"\d+\.\d+", input)
+        bank_asset = int(float(ans[0]))
         aadhar = self.extract_info(
-            text, "what is the Aadhaar number which is of 12 digits,not the Enrollment no or VID?")
+            text, "what is the Aadhaar number which is of 12 digits or characters and not in capital letters,not the Enrollment no or VID?")
         pan = self.extract_info(
             text, "give me the PAN or e-Permenant number or value which is of 10 characters all are in capital letters from income tax department?")
         Name = self.extract_info(
             text, "give me the  full Name from aadhar or pan?")
         Addresss = self.extract_info(text, "give me the  Address?")
         accountNo = self.extract_info(text, "give the bank account no?")
+        accountNo=int(accountNo)
         print("Process finished")
         return json.dumps({
-            "income": income,
+            "income": anual_income,
             "bankbalance": bank_asset,
             "aadhar": aadhar,
             "pan": pan,
-            "Name": Name,
+            "name": Name,
             "address": Addresss,
             "accountNo": accountNo
         })
 
     def get_eligibility_status(self, data):
-        dependents = data["dependents"]
-        eduction = data["education"]
-        employment = data["employment"]
-        anual_income = int(data["income"])*12
-        loan_ammount = data["loanammount"]
-        loan_term = data["loan_term"]
-        cibil = data["cibil"]
-        bank_balance = data["bankbalance"]
+        dependents = int(data["dependents"])
+        eduction = 1
+        employment =  1
+        anual_income = int(data["income"])
+        loan_ammount = int(data["loanAmount"])
+        loan_term = int(data["loanTerm"])
+        cibil = int(data["cibil"])
+        bank_balance = int(data["bankbalance"])
         features = [dependents, eduction, employment, anual_income,
                     loan_ammount, loan_term, cibil, bank_balance]
+        print("******",features)
+        
         prediction = self.predict(features)
         print(prediction)
         res = data
