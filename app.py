@@ -29,7 +29,7 @@ def upload_files():
     # LLM operation
     text = process(uploaded_files=files)
     # print("*******:", text)
-    kwargs = {"_data": text, "callback_api": "http://127.0.0.1:5000/callback_result",
+    kwargs = {"_data": text, "callback_api": "http://172.25.25.98:5000/callback_result",
               "rds_task_id": rds_task_id}
     task = celery.send_task("tasks.get_info_from_docs", kwargs=kwargs)
     # ------
@@ -73,7 +73,7 @@ def get_loan_status():
     req_data = request.get_json()
 
     data = "appended data"
-    kwargs = {"_data": req_data, "callback_api": "http://127.0.0.1:5000/callback_result",
+    kwargs = {"_data": req_data, "callback_api": "http://172.25.25.98:5000/callback_result",
               "rds_task_id": rds_task_id}
     task = celery.send_task(
         "tasks.generating_loan_eligibilty_status", kwargs=kwargs)
