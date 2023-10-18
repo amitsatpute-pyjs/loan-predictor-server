@@ -5,10 +5,10 @@ import json
 import time
 from services.predictor import Predictor
 
-app = Celery("tasks", backend='redis://172.25.25.98:6379/0',
-             broker='redis://172.25.25.98:6379/0')
+app = Celery("tasks", backend='redis://localhost:6379/0',
+             broker='redis://localhost:6379/0')
 app.conf.broker_connection_retry_on_startup = True
-rds = redis.Redis(host='172.25.25.98', port=6379, db=1)
+rds = redis.Redis(host='localhost', port=6379, db=1)
 headers = {'Content-Type': 'application/json'}
 
 llm = Predictor()
