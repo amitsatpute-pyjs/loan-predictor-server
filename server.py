@@ -12,12 +12,12 @@ import redis
 class Server:
     def __init__(self,name):
         self.app = Flask(name)
-        self.redis = redis.Redis(host='172.25.25.98', port=6379, db=1)
+        self.redis = redis.Redis(host='localhost', port=6379, db=1)
         self.cors = CORS(self.app)
         self.app.config['CORS_HEADERS'] = 'Content-Type'
         self.app.config.update(
-            CELERY_BROKER_URL='redis://172.25.25.98:6379/0',
-            result_backend='redis://172.25.25.98:6379/0'
+            CELERY_BROKER_URL='redis://localhost:6379/0',
+            result_backend='redis://localhost:6379/0'
         )
         self.app.debug = True
         self.socketio = SocketIO(self.app, async_mode="eventlet", async_handlers=True,cors_allowed_origins="*")        
