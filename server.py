@@ -26,4 +26,4 @@ class Server:
         self.celery = make_celery(self.app)
 
     def run(self):
-        self.socketio.run(self.app)
+        self.socketio.run(self.app,host="0.0.0.0")
