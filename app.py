@@ -5,6 +5,7 @@ from flask_cors import cross_origin
 from celery.result import AsyncResult
 import uuid
 from helpers.processDocs import process
+import os
 
 server = Server(__name__)
 
@@ -29,7 +30,7 @@ def upload_files():
     # LLM operation
     text = process(uploaded_files=files)
     # print("*******:", text)
-    kwargs = {"_data": text, "callback_api": "http://127.0.0.1:5000/callback_result",
+    kwargs = {"_data": text, "callback_api": f"http://{os.getenv('SERVER_HOST')}:{os.getenv('SERVER_PORT')}/callback_result",
               "rds_task_id": rds_task_id}
     task = celery.send_task("tasks.get_info_from_docs", kwargs=kwargs)
     # ------
@@ -43,6 +44,7 @@ def upload_files():
 
 @app.route('/callback_result', methods=['POST'])
 def callback_result():
+    print("call back called")
     data = request.get_json()
     socket.emit(str(data["task_id"]), data)
     return jsonify("done")
