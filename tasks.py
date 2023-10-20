@@ -37,7 +37,7 @@ def get_info_from_docs(_data, callback_api, rds_task_id):
     task_id = rds.get(rds_task_id).decode("utf-8")
     print(task_id, "*****")
     # url = callback_api
-    url = f'http://{os.getenv("SERVER_HOST")}:{os.getenv("SERVER_PORT")}/callback_result'
+    url = f'http://{os.getenv("SERVER_HOST")}:{os.getenv("SERVER_PORT")}/api/callback_result'
     result = json.loads(result)
     result["task_id"] = task_id
     requests.post(url, data=json.dumps(result), headers=headers)

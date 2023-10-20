@@ -13,9 +13,10 @@ rds = server.redis
 celery = server.celery
 app = server.app
 socket = server.socketio
+callback_api = f"http://{os.getenv('SERVER_HOST')}:{os.getenv('SERVER_PORT')}/api/callback_result"
 
 
-@app.route('/uploadfiles', methods=['POST'])
+@app.route('/api/uploadfiles', methods=['POST'])
 @cross_origin()
 def upload_files():
     rds_task_id = str(uuid.uuid4())
@@ -23,14 +24,14 @@ def upload_files():
         return jsonify({"message": "No file uploaded"})
     files = request.files.getlist('files')
 
-    #for testing
-    for file in files:        
+    # for testing
+    for file in files:
         print(file.filename)
 
     # LLM operation
     text = process(uploaded_files=files)
     # print("*******:", text)
-    kwargs = {"_data": text, "callback_api": f"http://{os.getenv('SERVER_HOST')}:{os.getenv('SERVER_PORT')}/callback_result",
+    kwargs = {"_data": text, "callback_api": callback_api,
               "rds_task_id": rds_task_id}
     task = celery.send_task("tasks.get_info_from_docs", kwargs=kwargs)
     # ------
@@ -42,7 +43,7 @@ def upload_files():
 # Executes after celery task done -> Callback API
 
 
-@app.route('/callback_result', methods=['POST'])
+@app.route('/api/callback_result', methods=['POST'])
 def callback_result():
     print("call back called")
     data = request.get_json()
@@ -50,7 +51,7 @@ def callback_result():
     return jsonify("done")
 
 
-@app.route('/getinfo', methods=['GET'])
+@app.route('/api/getinfo', methods=['GET'])
 @cross_origin()
 def get_info():
     # it will come from uploaded docs
@@ -67,7 +68,7 @@ def get_info():
     return jsonify(response)
 
 
-@app.route('/getLoanStatus', methods=['POST'])
+@app.route('/api/getLoanStatus', methods=['POST'])
 @cross_origin()
 def get_loan_status():
     rds_task_id = str(uuid.uuid4())
@@ -75,7 +76,7 @@ def get_loan_status():
     req_data = request.get_json()
 
     data = "appended data"
-    kwargs = {"_data": req_data, "callback_api": "http://127.0.0.1:5000/callback_result",
+    kwargs = {"_data": req_data, "callback_api": callback_api,
               "rds_task_id": rds_task_id}
     task = celery.send_task(
         "tasks.generating_loan_eligibilty_status", kwargs=kwargs)
@@ -87,7 +88,7 @@ def get_loan_status():
 
 
 # Instead of this API , I used socket-> for avoiding multiple request from client
-@app.route("/task/<task_id>", methods=["GET"])
+@app.route("/api/task/<task_id>", methods=["GET"])
 @cross_origin()
 def get_result(task_id):
     result = AsyncResult(task_id, app=celery)
@@ -102,7 +103,7 @@ def get_result(task_id):
 # OTP verify
 
 
-@app.route("/verifyotp", methods=["POST"])
+@app.route("/api/verifyotp", methods=["POST"])
 @cross_origin()
 def verify_otp():
     data = request.get_json()
