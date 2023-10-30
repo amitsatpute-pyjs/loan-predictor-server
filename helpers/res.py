@@ -23,3 +23,24 @@ def response(res, loan_amount, gross_monthly_income, rate_of_interest, loan_term
             res['reason'].append(
                 " Your bank asset Value is less than the monthly EMI")
     return res['reason']
+
+
+def emiResponse(res,loan_term,cibil,loan_amount):
+    if cibil>750:
+        P=loan_amount
+        res["interest"]=15.5
+        r=res["interest"]
+        res["loan_term"]=loan_term
+        res["loan_amount"]=loan_amount
+        res["emi"]=(P * (r / 1200)) / (1 - (1 + (r / 1200)) ** (-loan_term))
+    else:
+        P=loan_amount
+        res["interest"]=27.5
+        r=res["interest"]
+        res["loan_term"]=loan_term
+        res["loan_amount"]=loan_amount
+        res["emi"]=(P * (r / 1200)) / (1 - (1 + (r / 1200)) ** (-loan_term))
+    return res
+        
+    
+    

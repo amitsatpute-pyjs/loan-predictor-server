@@ -2,7 +2,7 @@ import os
 import requests
 import json
 import re
-from helpers.res import response
+from helpers.res import response,emiResponse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -128,9 +128,10 @@ class Predictor:
         res["loan_status"] = prediction
         res['anual_income'] = anual_income
         if prediction == 0:
+            reason=emiResponse(res,loan_term,cibil,loan_ammount)
             return json.dumps({
                 "message": "You are eligible for loan application.",
-                "reason": "",
+                "reason": reason,
                 "status": True
             })
         else:
