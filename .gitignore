@@ -3,3 +3,4 @@ models
 .loanenv
 .env
 __pycache__
+set.sh

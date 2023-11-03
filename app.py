@@ -6,6 +6,7 @@ from celery.result import AsyncResult
 import uuid
 from helpers.processDocs import process
 import os
+from services.mongo import MongoClient
 
 server = Server(__name__)
 
@@ -13,8 +14,10 @@ rds = server.redis
 celery = server.celery
 app = server.app
 socket = server.socketio
-db = server.db
 callback_api = f"http://{os.getenv('SERVER_HOST')}:{os.getenv('SERVER_PORT')}/api/callback_result"
+
+mongo = MongoClient()
+db = mongo.db
 
 
 @app.route('/api/uploadfiles', methods=['POST'])
@@ -69,7 +72,7 @@ def get_info():
     return jsonify(response)
 
 
-@app.route('/api/getLoanStatus', methods=['POST'])
+@app.route('/api/getloanstatus', methods=['POST'])
 @cross_origin()
 def get_loan_status():
     rds_task_id = str(uuid.uuid4())
@@ -118,61 +121,94 @@ def verify_otp():
     }
 
     return jsonify(response_data)
-@app.route('/api/updateloanstatus', methods=['GET'])
+
+
+@app.route('/api/updateloanstatus', methods=['POST'])
 @cross_origin()
 def updateLoanStatus():
     try:
-        data=request.get_json()
-        db.loanStatus.update_one({"loanStatus.loanId":data["loanId"]},{ "$set": { "loanStatus.status" : data["status"] } })
-        return json.dumps({
-            "status":"Success"
+        data = request.get_json()
+        db.loan_status.update_one({"loanId": data["loanId"]}, {
+                                  "$set": {"loanStatus": data["status"]}})
+        return jsonify({
+            "status": "Success"
         })
     except Exception as e:
         print("Error in saving data")
-    
+
 
 @app.route('/api/applyloan', methods=['POST'])
 @cross_origin()
 def applyloan():
     try:
-        data=request.get_json()
-        print(data,"*******")
-        data["loanId"]=str(uuid.uuid4())
-        data["loanStatus"]="Pending"
-        db.loanStatus.insert_one(data)
-        return json.dumps({
-            "loanId":data
+        data = request.get_json()
+        print(data, "*******")
+        data["loanId"] = str(uuid.uuid4())
+        data["loanStatus"] = "Pending"
+        print("db name::", db.name)
+        id = db.loan_status.insert_one(data).inserted_id
+        record = db.loan_status.find_one({"_id": id})
+        print("id::", record)
+
+        return jsonify({
+            "loanId": record["loanId"]
         })
     except Exception as e:
-        print("Error in saving data",e)
-        return json.dumps({
+        print("Error in saving data", e)
+        return jsonify({
             "error": str(e)
         })
-        
+
+
 @app.route('/api/getloanapplications', methods=['GET'])
 @cross_origin()
 def getloanapplications():
     try:
-        applications=db.loanStatus.find()
-        print("applications",applications)
-        return json.dumps({
-            "applications":applications
-        })
+        applications = db.loan_status.find({}, {"_id": 0})
+        data = list(applications)
+        return jsonify(data)
     except Exception as e:
         print("Error in returning applications data")
-    
+        return jsonify({
+            "error": str(e)
+        })
+
+
+@app.route('/api/getloaniddetails/<id>', methods=['GET'])
+@cross_origin()
+def getloaniddetails(id):
+    try:
+        applications = db.loan_status.find({"loanId": id}, {"_id": 0})
+        data = list(applications)
+        return jsonify(data)
+    except Exception as e:
+        print("Error in returning applications data")
+        return jsonify({
+            "error": str(e)
+        })
+
 
 @app.route('/api/trackloanid/<id>', methods=['GET'])
 @cross_origin()
 def trackloan(id):
     try:
-        applications=db.loanStatus.find({"loanStatus.loanId":id})
-        status=applications["loanStatus"]["Status"]
-        return json.dumps({
-            "status":status
-        })
+        applications = db.loan_status.find({"loanId": id})
+        data = list(applications)
+        if len(data) > 0:
+            status = data[0]["loanStatus"]
+            return jsonify({
+                "status": status
+            })
+        else:
+            return jsonify({
+                "status": "record not found"
+            })
+
     except Exception as e:
         print("Error in returning applications data")
+        return jsonify({
+            "error": str(e)
+        })
 
 
 if __name__ == '__main__':

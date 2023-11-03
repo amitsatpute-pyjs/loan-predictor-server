@@ -5,6 +5,7 @@ from celery_setup import make_celery
 from flask_cors import CORS, cross_origin
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit
+
 import eventlet
 eventlet.monkey_patch()
 
@@ -26,4 +27,4 @@ class Server:
         self.celery = make_celery(self.app)
 
     def run(self):
-        self.socketio.run(self.app,host="0.0.0.0")
+        self.socketio.run(self.app, host="0.0.0.0")
