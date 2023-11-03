@@ -1,4 +1,4 @@
-
+import json
 from server import Server
 from flask import jsonify, request
 from flask_cors import cross_origin
@@ -13,6 +13,7 @@ rds = server.redis
 celery = server.celery
 app = server.app
 socket = server.socketio
+db = server.db
 callback_api = f"http://{os.getenv('SERVER_HOST')}:{os.getenv('SERVER_PORT')}/api/callback_result"
 
 
@@ -117,6 +118,61 @@ def verify_otp():
     }
 
     return jsonify(response_data)
+@app.route('/api/updateloanstatus', methods=['GET'])
+@cross_origin()
+def updateLoanStatus():
+    try:
+        data=request.get_json()
+        db.loanStatus.update_one({"loanStatus.loanId":data["loanId"]},{ "$set": { "loanStatus.status" : data["status"] } })
+        return json.dumps({
+            "status":"Success"
+        })
+    except Exception as e:
+        print("Error in saving data")
+    
+
+@app.route('/api/applyloan', methods=['POST'])
+@cross_origin()
+def applyloan():
+    try:
+        data=request.get_json()
+        print(data,"*******")
+        data["loanId"]=str(uuid.uuid4())
+        data["loanStatus"]="Pending"
+        db.loanStatus.insert_one(data)
+        return json.dumps({
+            "loanId":data
+        })
+    except Exception as e:
+        print("Error in saving data",e)
+        return json.dumps({
+            "error": str(e)
+        })
+        
+@app.route('/api/getloanapplications', methods=['GET'])
+@cross_origin()
+def getloanapplications():
+    try:
+        applications=db.loanStatus.find()
+        print("applications",applications)
+        return json.dumps({
+            "applications":applications
+        })
+    except Exception as e:
+        print("Error in returning applications data")
+    
+
+@app.route('/api/trackloanid/<id>', methods=['GET'])
+@cross_origin()
+def trackloan(id):
+    try:
+        applications=db.loanStatus.find({"loanStatus.loanId":id})
+        status=applications["loanStatus"]["Status"]
+        return json.dumps({
+            "status":status
+        })
+    except Exception as e:
+        print("Error in returning applications data")
 
 
 if __name__ == '__main__':

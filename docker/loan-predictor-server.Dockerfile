@@ -1,6 +1,7 @@
-FROM python:3.10.13-alpine
+FROM python:3.11
 WORKDIR /usr/loan-predictor-server
 COPY requirement.txt .
-RUN pip install --no-cache-dir -r requirement.txt
+RUN pip install --upgrade pip
+RUN pip3 install  -r requirement.txt
 COPY . .
 CMD ["python",  "app.py"]

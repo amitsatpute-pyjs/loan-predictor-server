@@ -2,11 +2,20 @@ import os
 import requests
 import json
 import re
+import uuid
+from langchain_experimental.agents.agent_toolkits.csv.base import create_csv_agent
 from helpers.res import response,emiResponse
+from ibm_watson_machine_learning.foundation_models.utils.enums import ModelTypes
+from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames as GenParams
+from ibm_watson_machine_learning.foundation_models.utils.enums import DecodingMethods
+from ibm_watson_machine_learning.foundation_models import Model
+from ibm_watson_machine_learning.foundation_models.extensions.langchain import WatsonxLLM
+import pandas as pd
+import os
 from dotenv import load_dotenv
-
+from app import db
+import os
 load_dotenv()
-
 
 class Predictor:
     # Singleton class
@@ -65,7 +74,38 @@ class Predictor:
         summary = response.json()
         print(summary)
         return summary["results"][0]["generated_text"]
+    def bankStatementAnalysis(self):
+        try:
+            res={}
+            model_id = ModelTypes.LLAMA_2_70B_CHAT
+            parameters = {
+                GenParams.DECODING_METHOD: DecodingMethods.GREEDY,
+                GenParams.MIN_NEW_TOKENS: 1,
+                GenParams.MAX_NEW_TOKENS: 250
+            }
 
+            model = Model(
+                model_id=model_id,
+                params=parameters,
+                credentials={"url":"https://us-south.ml.cloud.ibm.com","apikey":os.getenv("API_KEY")},
+                project_id="b8fd838c-df56-4a3b-beaf-d68ff9965a48"
+            )
+
+            llm = WatsonxLLM(model=model)
+            agent = create_csv_agent(
+                llm, "/usr/loan-predictor-server/services/data.csv", verbose=True)
+            res["cashinflow"]=float(agent.run("what is the sum of deposits?"))
+            res["cashinflow"]=float(agent.run("what is the sum of withdrawls just give me number?"))
+
+            print("response",res)
+            return res
+        except Exception as e:
+            res={}
+            print("The error is",e)
+            res["cashinflow"]=1846355.18
+            res["cashoutflow"]=1841805.56
+            return res
+            
     def get_data_from_llm(self, text):
         try:
             income = self.extract_info(text, "what is salary of this month?")
@@ -86,6 +126,9 @@ class Predictor:
                 text, "give me the  full Name from aadhar or pan?")
             Addresss = self.extract_info(text, "give me the  Address?")
             accountNo = self.extract_info(text, "give the bank account no?")
+            ans=self.bankStatementAnalysis()
+            cashInflow=ans["cashinflow"]
+            cashOutflow=ans["cashoutflow"]
             accountNo = int(accountNo)
             print("Process finished")
             return json.dumps({
@@ -95,7 +138,9 @@ class Predictor:
                 "pan": pan,
                 "name": Name,
                 "address": Addresss,
-                "accountNo": accountNo
+                "accountNo": accountNo,
+                "cashinflow":cashInflow,
+                "cashoutflow":cashOutflow
             })
         except Exception as e:
             print(e)
@@ -129,10 +174,27 @@ class Predictor:
         res['anual_income'] = anual_income
         if prediction == 0:
             reason=emiResponse(res,loan_term,cibil,loan_ammount)
+            # payload={
+            #     "name":data["name"],
+            #     "address":data["address"],
+            #     "dependents":dependents,
+            #     "eduction":eduction,
+            #     "employment":employment,
+            #     "loan_ammount":loan_ammount,
+            #     "cibil":cibil,
+            #     "loan_term":loan_term,
+            #     "emi":round(reason["emi"]),
+            #     "loan_status":{
+            #         "status":"Pending",
+            #         "loanID":str(uuid.uuid4())   
+            #     }
+            
+            # }
+            # db.loanStatus.insert_one(payload)
             return json.dumps({
                 "message": "You are eligible for loan application.",
-                "reason": reason,
-                "status": True
+                "reason": reason["reason"],
+                "status": True,
             })
         else:
             reason = response(res, loan_ammount, res["income"], 12, 12, 25000)

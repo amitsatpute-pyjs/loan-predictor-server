@@ -28,18 +28,29 @@ def response(res, loan_amount, gross_monthly_income, rate_of_interest, loan_term
 def emiResponse(res,loan_term,cibil,loan_amount):
     if cibil>750:
         P=loan_amount
-        res["interest"]=15.5
-        r=res["interest"]
-        res["loan_term"]=loan_term
+        res["reason"]=[]
+        res["reason"].append("Interest rate is 15.5%")
+        res["interest_rate"]=15.5
+        r=15.5
+        res["reason"].append("Your Loan Amount is "+str(loan_amount))
         res["loan_amount"]=loan_amount
+        res["reason"].append("Your Loan term is "+ str(loan_term) + " years")
+        loan_term=loan_term*12
         res["emi"]=(P * (r / 1200)) / (1 - (1 + (r / 1200)) ** (-loan_term))
+        res["reason"].append("Your EMI amount is "+ str(round(res["emi"])))
+
     else:
         P=loan_amount
-        res["interest"]=27.5
-        r=res["interest"]
-        res["loan_term"]=loan_term
+        res["reason"]=[]
+        res["reason"].append("Interest rate is 27.5%")
+        r=27.5
+        res["interest_rate"]=r
+        res["reason"].append("Your Loan Amount is "+str(loan_amount))
         res["loan_amount"]=loan_amount
+        res["reason"].append("Your Loan term is "+ str(loan_term) + " years")
+        loan_term=loan_term*12
         res["emi"]=(P * (r / 1200)) / (1 - (1 + (r / 1200)) ** (-loan_term))
+        res["reason"].append("Your EMI Amount is "+ str(round(res["emi"])))
     return res
         
     
