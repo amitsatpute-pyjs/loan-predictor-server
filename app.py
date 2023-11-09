@@ -122,6 +122,21 @@ def verify_otp():
 
     return jsonify(response_data)
 
+@app.route("/api/verifyadmin", methods=["POST"])
+@cross_origin()
+def verify_otp():
+    data = request.get_json()
+    if data["password"] == "admin":
+        status = True
+    else:
+        status = False
+    response_data = {
+        "status": status
+
+    }
+
+    return jsonify(response_data)
+
 
 @app.route('/api/updateloanstatus', methods=['POST'])
 @cross_origin()

@@ -41,4 +41,4 @@ wsproto
 ibm-watson-machine-learning>=1.0.327
 langchain
 langchain-experimental
-Flask-PyMongo
+pymongo
