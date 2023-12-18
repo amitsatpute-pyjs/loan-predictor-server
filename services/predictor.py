@@ -27,7 +27,7 @@ class Predictor:
     def __init__(self):
         self.api_key = os.getenv('API_KEY')
         self.token_url = "https://iam.cloud.ibm.com/identity/token"
-        self.scoring_url = "https://private.us-south.ml.cloud.ibm.com/ml/v4/deployments/6cefe953-864f-4595-9efa-c7b05144db6f/predictions?version=2021-05-01"
+        self.scoring_url = "https://us-south.ml.cloud.ibm.com/ml/v4/deployments/8c6d6928-bb3f-404b-ae28-77fb005d5c87/predictions?version=2021-05-01"
         self.model_url = "https://us-south.ml.cloud.ibm.com/ml/v1-beta/generation/text?version=2023-05-29"
         self.token = ""
 
