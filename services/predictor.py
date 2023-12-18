@@ -27,7 +27,7 @@ class Predictor:
     def __init__(self):
         self.api_key = os.getenv('API_KEY')
         self.token_url = "https://iam.cloud.ibm.com/identity/token"
-        self.scoring_url = "https://us-south.ml.cloud.ibm.com/ml/v4/deployments/8c6d6928-bb3f-404b-ae28-77fb005d5c87/predictions?version=2021-05-01"
+        self.scoring_url = "https://private.us-south.ml.cloud.ibm.com/ml/v4/deployments/6cefe953-864f-4595-9efa-c7b05144db6f/predictions?version=2021-05-01"
         self.model_url = "https://us-south.ml.cloud.ibm.com/ml/v1-beta/generation/text?version=2023-05-29"
         self.token = ""
 
@@ -46,6 +46,7 @@ class Predictor:
         response_scoring = requests.post(
             self.scoring_url, json=payload_scoring, headers=headers)
         predictions = response_scoring.json()
+        print(predictions)
 
         return predictions["predictions"][0]["values"][0][0]
 
@@ -127,6 +128,8 @@ class Predictor:
             Addresss = self.extract_info(text, "give me the  Address?")
             accountNo = self.extract_info(text, "give the bank account no?")
             ans=self.bankStatementAnalysis()
+            statementData=self.statementAnalysis()
+            print(statementData,"statementData")
             cashInflow=ans["cashinflow"]
             cashOutflow=ans["cashoutflow"]
             accountNo = int(accountNo)
@@ -139,8 +142,9 @@ class Predictor:
                 "name": Name,
                 "address": Addresss,
                 "accountNo": accountNo,
-                "cashinflow":cashInflow,
-                "cashoutflow":cashOutflow
+                "cashinflow":statementData["cashInFlow"],
+                "cashoutflow":statementData["cashOutFlow"],
+                "ExistingEmi":statementData["totalEmi"]
             })
         except Exception as e:
             print(e)
@@ -151,18 +155,20 @@ class Predictor:
                 "pan": "",
                 "name": "",
                 "address": "",
-                "accountNo": ""            
+                "accountNo": "",
+                "emi":""          
             })
 
     def get_eligibility_status(self, data):
         dependents = int(data["dependents"])
-        eduction = 1
-        employment = 1
+        eduction = data["education"]
+        employment = data["jobType"]
         anual_income = int(data["income"])
         loan_ammount = int(data["loanAmount"])
         loan_term = int(data["loanTerm"])
         cibil = int(data["cibil"])
         bank_balance = int(data["bankbalance"])
+
         features = [dependents, eduction, employment, anual_income,
                     loan_ammount, loan_term, cibil, bank_balance]
         print("******", features)
@@ -203,3 +209,46 @@ class Predictor:
                 "reason": reason,
                 "status": False
             })
+    def statementAnalysis(self):
+            try:
+                dataPath="/usr/loan-predictor-server/services/data.csv"
+                df=pd.read_csv(dataPath)
+                res={}
+                # df['Deposits']=df['Deposits'].str.replace(',', '')
+                df['Deposits'] = pd.to_numeric(df['Deposits'])
+                # df['Withdrawals']=df['Withdrawals'].str.replace(',', '')
+
+                df['Withdrawals'] = pd.to_numeric(df['Withdrawals'])
+                # df['Balance']=df['Balance'].str.replace(',', '')
+
+                df['Balance'] = pd.to_numeric(df['Balance'])
+                search_word = 'ecs'
+
+                result = df['Particulars'].str.contains(search_word, case=False)
+
+                result=list(result)
+                ans=[]
+                for i in range(len(result)):
+                    if result[i] == True:     
+                        print("true")
+                        print(df.iloc[i+1]["Withdrawals"])
+                        amount=df.iloc[i+1]["Withdrawals"]
+                        ans.append(float(amount))
+    #             print(ans)
+                emis=set()
+                for i in ans:
+                    emis.add(i)
+                print(emis)
+                totalEmi=0
+                for i in emis:
+                    totalEmi+=i
+                cashInflow=df["Deposits"].sum()
+                cashOutflow=df["Withdrawals"].sum()
+                res["cashInFlow"]=cashInflow
+                res["cashOutFlow"]=cashOutflow
+                res["totalEmi"]=totalEmi
+                return res
+
+            except Exception as e:
+                print("Error is",e)
+                return json.dumps({"Error":e})

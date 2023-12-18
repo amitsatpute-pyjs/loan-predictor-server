@@ -124,19 +124,20 @@ def verify_otp():
 
 @app.route("/api/verifyadmin", methods=["POST"])
 @cross_origin()
-def verify_otp():
+def verify_admin():
     data = request.get_json()
-    if data["password"] == "admin":
+    if data["password"] == "admin" and data["username"]=="admin":
         status = True
+        user = "Admin"
     else:
         status = False
+        user = ""
     response_data = {
-        "status": status
-
+        "status": status,
+        "user":user
     }
 
     return jsonify(response_data)
-
 
 @app.route('/api/updateloanstatus', methods=['POST'])
 @cross_origin()
@@ -195,7 +196,44 @@ def getloaniddetails(id):
     try:
         applications = db.loan_status.find({"loanId": id}, {"_id": 0})
         data = list(applications)
-        return jsonify(data)
+        data=data[0]
+        if data["education"]==0:
+            data["education"]="Graduated"
+        else:
+            data["education"]="Not Graduate"
+        if data["jobType"]==0:
+            data["jobType"]="salaried"
+        else:
+            data["jobType"]="Self Employed"
+        data["bankbalance"]='{:,.2f}'.format(data["bankbalance"])
+        data["cashinflow"]='{:,.2f}'.format(data["cashinflow"])
+        data["cashoutflow"]='{:,.2f}'.format(data["cashoutflow"])
+
+        res=[{
+            "name":data["name"],
+            "aadhar":data["aadhar"],
+            "address":data["address"],
+            "contact":data["contact"],
+            "education":data["education"],
+            "jobType":data["jobType"],
+            "dependents":data["dependents"],
+            "bankbalance":data["bankbalance"],
+            "pan":data["pan"],
+            "creditscore":data["cibil"],
+            "accountNo":data["accountNo"],
+            "loanAmount":data["loanAmount"],
+            "loanStatus":data["loanStatus"],
+            "loanTerm":data["loanTerm"],
+            "income":data["income"],
+            "cashinflow":data["cashinflow"],
+            "cashoutflow":data["cashoutflow"],
+            "existingEmi":data["ExistingEmi"],
+            "reason":data["reason"],
+            "task_id":data["task_id"],
+            "loanId":data["loanId"]
+        }]
+        print(res)
+        return res
     except Exception as e:
         print("Error in returning applications data")
         return jsonify({
